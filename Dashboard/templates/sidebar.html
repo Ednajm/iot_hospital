@@ -1,0 +1,67 @@
+<nav class="sidebar" id="sidebar">
+    <div class="sidebar-header">
+        <p class="sidebar-title">Menu Principale</p>
+    </div>
+    
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item">
+            <a href="/" class="nav-link {{ 'active' if request.endpoint == 'index' else '' }}">
+                <i class="bi bi-grid-fill me-2"></i> Dashboard
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/patients" class="nav-link {{ 'active' if request.endpoint == 'patients' else '' }}">
+                <i class="bi bi-heart-pulse-fill me-2"></i> Pazienti
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/rooms" class="nav-link {{ 'active' if request.endpoint == 'rooms' else '' }}">
+                <i class="bi bi-building-fill me-2"></i> Stanze
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/assets" class="nav-link {{ 'active' if request.endpoint == 'assets' else '' }}">
+                <i class="bi bi-box-seam-fill me-2"></i> Asset
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/alerts" class="nav-link {{ 'active' if request.endpoint == 'alerts' else '' }}">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Allarmi
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="/analytics" class="nav-link {{ 'active' if request.endpoint == 'analytics' else '' }}">
+                <i class="bi bi-bar-chart-line-fill me-2"></i> Analytics
+            </a>
+        </li>
+    </ul>
+    
+    <hr>
+    
+    <div class="sidebar-header mt-3">
+        <p class="sidebar-title">Sistema</p>
+    </div>
+    
+    <ul class="nav nav-pills flex-column">
+        <li class="nav-item">
+            <a href="/settings" class="nav-link {{ 'active' if request.endpoint == 'settings' else '' }}">
+                <i class="bi bi-gear-fill me-2"></i> Impostazioni
+            </a>
+        </li>
+        <li class="nav-item">
+            <a href="#" class="nav-link">
+                <i class="bi bi-question-circle-fill me-2"></i> Supporto
+            </a>
+        </li>
+    </ul>
+    
+    <div class="sidebar-footer">
+        <div class="d-flex align-items-center mb-2">
+            <span class="badge bg-success pulse-dot me-2"></span>
+            <small class="text-muted fw-semibold">Sistema Online</small>
+        </div>
+        <small class="text-muted d-block" id="last-refresh-time">
+            <i class="bi bi-clock me-1"></i>Ultimo aggiornamento: --:--
+        </small>
+    </div>
+</nav>

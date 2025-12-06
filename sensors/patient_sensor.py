@@ -26,4 +26,3 @@ while True:
     client.publish("hospital/patient/1", message)
     print("Inviato:", message)
     time.sleep(5) 
-    

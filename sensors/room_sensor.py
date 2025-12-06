@@ -4,7 +4,8 @@ import time
 import random
 
 client = mqtt.Client()
-client.connect("localhost", 1883)
+client.connect("localhost", 1883, 60)
+client.loop_start()
 
 rooms = [f"Room{i}" for i in range(1, 501)]
 
@@ -31,5 +32,5 @@ while True:
 
         print(f"Inviato -> Topic: {topic} | Dati: {message}")
 
-    
     time.sleep(7)
+   

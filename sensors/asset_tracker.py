@@ -3,7 +3,7 @@ import json
 import time 
 import random 
 
-client = mqtt.client()
+client = mqtt.Client()
 client.connect("localhost", 1883)
 departaments = ["lab_id" ,"ICU_id", "emergency_id", "room_id"]
 
@@ -28,7 +28,7 @@ while True:
 
         print(f" Inviato -> Topic: {topic} | Dati: {message}")
 
-    time.sleep(10)
+    time.sleep(5)
 
     
 

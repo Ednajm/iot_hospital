@@ -1,308 +1,52 @@
-"""
-🏥 IOT Hospital - Data Processor
-Elabora dati dai sensori e genera allarmi in base a soglie critiche
-
-Author: El Houssine (Ednajm)
-Corso di Ingegneria Informatica — Progetto IoT 2025
-"""
-
-from datetime import datetime
+import pandas as pd
 import json
-
-class DataProcessor:
-    """
-    Elabora i dati dei sensori e genera allarmi basati su soglie critiche
-    """
-    
-    # Soglie parametri pazienti (come da README)
-    PATIENT_THRESHOLDS = {
-        "heart_rate_min": 60,
-        "heart_rate_max": 120,
-        "temperature_normal": 38.0,
-        "temperature_critical": 38.5,
-        "spo2_critical": 92,
-        "spo2_min": 90
-    }
-    
-    # Soglie parametri ambientali (come da README)
-    ROOM_THRESHOLDS = {
-        "temperature_min": 20,
-        "temperature_max": 26,
-        "humidity_min": 40,
-        "humidity_max": 65,
-        "co2_normal": 800,
-        "co2_critical": 1000
-    }
-    
-    # Soglie asset (come da README)
-    ASSET_THRESHOLDS = {
-        "battery_low": 25,
-        "battery_critical": 20
-    }
-    
-    def __init__(self):
-        print("🔧 DataProcessor inizializzato con soglie critiche")
-    
-    def check_patient_alerts(self, patient_id, heart_rate, temperature, spo2):
-        """
-        Verifica parametri vitali paziente e genera allarmi
-        
-        Parametri monitorati:
-        - Battito cardiaco: 60-120 bpm
-        - Temperatura: < 38.5°C (allarme se > 38°C)
-        - SpO₂: 90-100% (allarme se < 92%)
-        """
-        alerts = []
-        timestamp = datetime.now().isoformat()
-        
-        # Verifica battito cardiaco
-        if heart_rate < self.PATIENT_THRESHOLDS["heart_rate_min"]:
-            alerts.append({
-                "type": "patient",
-                "priority": "critical",
-                "patient_id": patient_id,
-                "parameter": "heart_rate",
-                "value": heart_rate,
-                "threshold": self.PATIENT_THRESHOLDS["heart_rate_min"],
-                "message": f"Battito cardiaco troppo basso: {heart_rate} bpm (min {self.PATIENT_THRESHOLDS['heart_rate_min']})",
-                "timestamp": timestamp
-            })
-        elif heart_rate > self.PATIENT_THRESHOLDS["heart_rate_max"]:
-            alerts.append({
-                "type": "patient",
-                "priority": "critical",
-                "patient_id": patient_id,
-                "parameter": "heart_rate",
-                "value": heart_rate,
-                "threshold": self.PATIENT_THRESHOLDS["heart_rate_max"],
-                "message": f"Battito cardiaco troppo alto: {heart_rate} bpm (max {self.PATIENT_THRESHOLDS['heart_rate_max']})",
-                "timestamp": timestamp
-            })
-        
-        # Verifica temperatura
-        if temperature >= self.PATIENT_THRESHOLDS["temperature_critical"]:
-            alerts.append({
-                "type": "patient",
-                "priority": "critical",
-                "patient_id": patient_id,
-                "parameter": "temperature",
-                "value": temperature,
-                "threshold": self.PATIENT_THRESHOLDS["temperature_critical"],
-                "message": f"Temperatura critica: {temperature}°C (max {self.PATIENT_THRESHOLDS['temperature_critical']}°C)",
-                "timestamp": timestamp
-            })
-        elif temperature > self.PATIENT_THRESHOLDS["temperature_normal"]:
-            alerts.append({
-                "type": "patient",
-                "priority": "warning",
-                "patient_id": patient_id,
-                "parameter": "temperature",
-                "value": temperature,
-                "threshold": self.PATIENT_THRESHOLDS["temperature_normal"],
-                "message": f"Temperatura elevata: {temperature}°C (normale < {self.PATIENT_THRESHOLDS['temperature_normal']}°C)",
-                "timestamp": timestamp
-            })
-        
-        # Verifica SpO2
-        if spo2 < self.PATIENT_THRESHOLDS["spo2_critical"]:
-            alerts.append({
-                "type": "patient",
-                "priority": "critical",
-                "patient_id": patient_id,
-                "parameter": "spo2",
-                "value": spo2,
-                "threshold": self.PATIENT_THRESHOLDS["spo2_critical"],
-                "message": f"Saturazione ossigeno critica: {spo2}% (min {self.PATIENT_THRESHOLDS['spo2_critical']}%)",
-                "timestamp": timestamp
-            })
-        elif spo2 < self.PATIENT_THRESHOLDS["spo2_min"]:
-            alerts.append({
-                "type": "patient",
-                "priority": "warning",
-                "patient_id": patient_id,
-                "parameter": "spo2",
-                "value": spo2,
-                "threshold": self.PATIENT_THRESHOLDS["spo2_min"],
-                "message": f"Saturazione ossigeno bassa: {spo2}% (min {self.PATIENT_THRESHOLDS['spo2_min']}%)",
-                "timestamp": timestamp
-            })
-        
-        return alerts
-    
-    def check_room_alerts(self, room_id, temperature, humidity, co2):
-        """
-        Verifica parametri ambientali stanza e genera allarmi
-        
-        Parametri monitorati:
-        - Temperatura: 20-26°C
-        - Umidità: 40-65%
-        - CO2: 400-800 ppm (allarme se > 1000 ppm)
-        """
-        alerts = []
-        timestamp = datetime.now().isoformat()
-        
-        # Verifica temperatura
-        if temperature < self.ROOM_THRESHOLDS["temperature_min"]:
-            alerts.append({
-                "type": "room",
-                "priority": "warning",
-                "room_id": room_id,
-                "parameter": "temperature",
-                "value": temperature,
-                "threshold": self.ROOM_THRESHOLDS["temperature_min"],
-                "message": f"Temperatura stanza troppo bassa: {temperature}°C (min {self.ROOM_THRESHOLDS['temperature_min']}°C)",
-                "timestamp": timestamp
-            })
-        elif temperature > self.ROOM_THRESHOLDS["temperature_max"]:
-            alerts.append({
-                "type": "room",
-                "priority": "warning",
-                "room_id": room_id,
-                "parameter": "temperature",
-                "value": temperature,
-                "threshold": self.ROOM_THRESHOLDS["temperature_max"],
-                "message": f"Temperatura stanza troppo alta: {temperature}°C (max {self.ROOM_THRESHOLDS['temperature_max']}°C)",
-                "timestamp": timestamp
-            })
-        
-        # Verifica umidità
-        if humidity < self.ROOM_THRESHOLDS["humidity_min"]:
-            alerts.append({
-                "type": "room",
-                "priority": "info",
-                "room_id": room_id,
-                "parameter": "humidity",
-                "value": humidity,
-                "threshold": self.ROOM_THRESHOLDS["humidity_min"],
-                "message": f"Umidità troppo bassa: {humidity}% (min {self.ROOM_THRESHOLDS['humidity_min']}%)",
-                "timestamp": timestamp
-            })
-        elif humidity > self.ROOM_THRESHOLDS["humidity_max"]:
-            alerts.append({
-                "type": "room",
-                "priority": "info",
-                "room_id": room_id,
-                "parameter": "humidity",
-                "value": humidity,
-                "threshold": self.ROOM_THRESHOLDS["humidity_max"],
-                "message": f"Umidità troppo alta: {humidity}% (max {self.ROOM_THRESHOLDS['humidity_max']}%)",
-                "timestamp": timestamp
-            })
-        
-        # Verifica CO2
-        if co2 > self.ROOM_THRESHOLDS["co2_critical"]:
-            alerts.append({
-                "type": "room",
-                "priority": "critical",
-                "room_id": room_id,
-                "parameter": "co2",
-                "value": co2,
-                "threshold": self.ROOM_THRESHOLDS["co2_critical"],
-                "message": f"Livello CO2 critico: {co2} ppm (max {self.ROOM_THRESHOLDS['co2_critical']} ppm)",
-                "timestamp": timestamp
-            })
-        elif co2 > self.ROOM_THRESHOLDS["co2_normal"]:
-            alerts.append({
-                "type": "room",
-                "priority": "warning",
-                "room_id": room_id,
-                "parameter": "co2",
-                "value": co2,
-                "threshold": self.ROOM_THRESHOLDS["co2_normal"],
-                "message": f"Livello CO2 elevato: {co2} ppm (normale < {self.ROOM_THRESHOLDS['co2_normal']} ppm)",
-                "timestamp": timestamp
-            })
-        
-        return alerts
-    
-    def check_asset_alerts(self, asset_id, battery, status):
-        """
-        Verifica stato asset e genera allarmi
-        
-        Parametri monitorati:
-        - Batteria: > 20% (allarme se < 25%)
-        - Stato: Active, Standby, Maintenance
-        """
-        alerts = []
-        timestamp = datetime.now().isoformat()
-        
-        # Verifica batteria
-        if battery < self.ASSET_THRESHOLDS["battery_critical"]:
-            alerts.append({
-                "type": "asset",
-                "priority": "critical",
-                "asset_id": asset_id,
-                "parameter": "battery",
-                "value": battery,
-                "threshold": self.ASSET_THRESHOLDS["battery_critical"],
-                "message": f"Batteria critica: {battery}% (min {self.ASSET_THRESHOLDS['battery_critical']}%)",
-                "timestamp": timestamp
-            })
-        elif battery < self.ASSET_THRESHOLDS["battery_low"]:
-            alerts.append({
-                "type": "asset",
-                "priority": "warning",
-                "asset_id": asset_id,
-                "parameter": "battery",
-                "value": battery,
-                "threshold": self.ASSET_THRESHOLDS["battery_low"],
-                "message": f"Batteria bassa: {battery}% (min {self.ASSET_THRESHOLDS['battery_low']}%)",
-                "timestamp": timestamp
-            })
-        
-        # Verifica stato manutenzione
-        if status.lower() == "maintenance":
-            alerts.append({
-                "type": "asset",
-                "priority": "info",
-                "asset_id": asset_id,
-                "parameter": "status",
-                "value": status,
-                "message": f"Asset in manutenzione: {asset_id}",
-                "timestamp": timestamp
-            })
-        
-        return alerts
-    
-    def analyze_trends(self, data_series):
-        """
-        Analizza trend dei dati per predire anomalie
-        (Da implementare in futuro per ML/AI)
-        """
-        pass
-    
-    def get_statistics(self, data_list):
-        """
-        Calcola statistiche sui dati raccolti
-        """
-        if not data_list:
-            return {}
-        
-        return {
-            "count": len(data_list),
-            "min": min(data_list),
-            "max": max(data_list),
-            "avg": sum(data_list) / len(data_list)
-        }
-
-if __name__ == "__main__":
-    # Test del processor
-    processor = DataProcessor()
-    
-    print("\n🧪 Test soglie pazienti:")
-    alerts = processor.check_patient_alerts(1234, 45, 39.0, 88)
-    for alert in alerts:
-        print(f"  - {alert['priority'].upper()}: {alert['message']}")
-    
-    print("\n🧪 Test soglie ambientali:")
-    alerts = processor.check_room_alerts("Room101", 28, 70, 1200)
-    for alert in alerts:
-        print(f"  - {alert['priority'].upper()}: {alert['message']}")
-    
-    print("\n🧪 Test soglie asset:")
-    alerts = processor.check_asset_alerts("Asset001", 15, "maintenance")
-    for alert in alerts:
-        print(f"  - {alert['priority'].upper()}: {alert['message']}")
+import os
+PATIENT_FILE = 'data/patients_data.csv'
+ROOM_FILE = 'data/room_data.csv'
+ASSET_FILE = 'data/asset_data.csv'
+ALERT_FILE = 'data/alerts.json'
+if not (os.path.exists(PATIENT_FILE) and os.path.exists(ROOM_FILE) and os.path.exists(ASSET_FILE)):
+    print(" Errore: uno o più file CSV non trovati nella cartella /data.")
+    exit()
+patient_df = pd.read_csv(PATIENT_FILE)
+room_df = pd.read_csv(ROOM_FILE)
+asset_df = pd.read_csv(ASSET_FILE)
+alerts = []
+for index, row in patient_df.iterrows():
+    patient_id = row.get("patient_id")
+    temperature = row.get("temperature")
+    spo2 = row.get("spo2")
+    heart_rate = row.get("heart_rate")
+    room_id = row.get("room_id")
+    if temperature and temperature > 38:
+        alerts.append({
+            "type": "Patient",
+            "id": patient_id,
+            "room": room_id,
+            "alert": " High Temperature",
+            "value": temperature
+        })
+    if spo2 and spo2 < 90:
+        alerts.append({
+            "type": "Patient",
+            "id": patient_id,
+            "room": room_id,
+            "alert": " Low SpO₂",
+            "value": spo2
+        })
+    if heart_rate and (heart_rate < 50 or heart_rate > 120):
+        alerts.append({
+            "type": "Patient",
+            "id": patient_id,
+            "room": room_id,
+            "alert": " Abnormal Heart Rate",
+            "value": heart_rate
+        })
+for index, row in room_df.iterrows():
+    room_id = row.get("room_id")
+    temperature = row.get("temperature")
+    humidity = row.get("humidity")
+    co2 = row.get("co2")
 
     if temperature and (temperature < 18 or temperature > 30):
         alerts.append({

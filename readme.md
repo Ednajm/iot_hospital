@@ -29,7 +29,7 @@ L'architettura scalabile permette l'adattamento da piccole cliniche (decine di d
 
 1. **Personale infermieristico** (utenti primari)
    - Ricevono alert in tempo reale su condizioni critiche dei pazienti
-   - Monitorano dashboard centralizzata per overview multipazienti
+   - Monitorano sistema centralizzato per overview multipazienti
    - Gestiscono priorità interventi basate su severity degli alert
 
 2. **Medici e specialisti**
@@ -154,7 +154,6 @@ L'architettura scalabile permette l'adattamento da piccole cliniche (decine di d
 - **Elaborazione dati + alert generation**: <200ms
 - **Latenza end-to-end**: <500ms (da rilevazione anomalia a alert disponibile)
 - **Update frequency**: 5 secondi per sensore (configurabile fino a 1 secondo)
-- **Real-time dashboard**: Refresh <1 secondo
 - **Target critico**: Alert critici (SpO₂<85%, temp>40°C) processati in <300ms
 
 ### 5. Consumo Energetico
@@ -274,14 +273,13 @@ L'architettura scalabile permette l'adattamento da piccole cliniche (decine di d
     - **Misurazione**: `psutil` Python, monitoring continuo
     - **Alert**: >85% sostenuto indica necessità scaling
 
-### Dashboard Metriche in Tempo Reale
+### Monitoraggio Sistema via API
 
-Il sistema implementa (in sviluppo) dashboard con KPI:
-- **Status overview**: Verde (tutto OK) / Giallo (warning) / Rosso (critical)
-- **Alert count**: Attivi/Risolti ultime 24h
-- **Response time**: Tempo medio acknowledge alert
-- **System health**: Uptime %, latenza media, throughput corrente
-- **Device status**: Sensori online/offline, batterie basse
+Il sistema espone metriche via endpoint REST:
+- **Status overview**: Interrogabile via `/api/status`
+- **Alert count**: Query su `/api/alerts` per alert attivi
+- **System health**: Endpoint `/api/statistics` per KPI sistema
+- **Device status**: Ultimo aggiornamento sensori nel database
 
 ### Soglie di Allarme Sistema
 
@@ -386,10 +384,10 @@ Il sistema è composto da **5 livelli architetturali** con 8 componenti principa
 - **Operazioni read**: `get_latest_*()`, `get_*_history()`, `get_active_alerts()`, `get_statistics()`
 - **Location**: `data/hospital.db`
 
-#### 5. **Application/Frontend Layer**
+#### 5. **Application Layer**
 
 **H. API Server** ([backend/api_server.py](backend/api_server.py) + [app.py](app.py))
-- **Funzione**: REST API per frontend, dashboard, integrazioni esterne
+- **Funzione**: REST API per monitoraggio e integrazioni esterne
 - **Framework**: Flask (Python web framework)
 - **Endpoints attuali**:
   - `GET /` → Status message
@@ -403,7 +401,6 @@ Il sistema è composto da **5 livelli architetturali** con 8 componenti principa
   - `POST /api/alerts/{id}/acknowledge` → Riconosci alert
   - `GET /api/statistics` → KPI sistema
 - **Porta**: 5000
-- **CORS**: Abilitato per frontend web
 - **Autenticazione**: JWT (in sviluppo)
 
 ### Come Comunicano i Componenti
@@ -478,7 +475,7 @@ Il sistema è composto da **5 livelli architetturali** con 8 componenti principa
                 │ SQL queries (read)
                 ▼
 ┌─────────────────────────────────────────────────────────────────┐
-│           APPLICATION LAYER (API & Frontend)                    │
+│                  APPLICATION LAYER (API)                        │
 │  ┌────────────────────────────────────────────────────────────┐ │
 │  │              Flask API Server (app.py)                     │ │
 │  │  - GET /api/status → JSON health check                     │ │
@@ -487,14 +484,6 @@ Il sistema è composto da **5 livelli architetturali** con 8 componenti principa
 │  │  - REST endpoints for all entities                         │ │
 │  └────────────────────────┬───────────────────────────────────┘ │
 └───────────────────────────┼─────────────────────────────────────┘
-                            │
-                            │ HTTP/REST (JSON)
-                            │ Port 5000
-                            ▼
-                   ┌─────────────────┐
-                   │  Web Dashboard  │
-                   │  (Future: React)│
-                   └─────────────────┘
 ```
 
 ### Protocolli di Comunicazione
@@ -565,21 +554,20 @@ Il sistema è composto da **5 livelli architetturali** con 8 componenti principa
   - **Scalabilità**: Fino a ~1M records gestibili, poi migrazione a PostgreSQL
 - **Query patterns**:
   - Insert heavy (1100 write/s)
-  - Read moderate (dashboard refresh ogni 1-5s)
+  - Read moderate (query API ogni 5-10s)
   - Aggregazioni (statistiche, trend) su finestre temporali
 
-#### **Livello 5: Application/Frontend Layer**
-- **Ruolo**: Interfaccia utente, API esterna, visualizzazione
-- **Componente**: Flask REST API (+ futuro dashboard React)
+#### **Livello 5: Application Layer**
+- **Ruolo**: API per monitoraggio e integrazioni esterne
+- **Componente**: Flask REST API Server
 - **Caratteristiche**:
   - **RESTful API**: Endpoint standard per CRUD operazioni
-  - **JSON responses**: Formato universale per frontend web/mobile
-  - **CORS-enabled**: Chiamate da domini diversi (frontend separato)
+  - **JSON responses**: Formato universale per integrazioni
   - **Stateless**: No sessioni server-side, autenticazione JWT
 - **Futuri sviluppi**:
-  - Dashboard web real-time (WebSocket per push notifications)
-  - Mobile app (React Native) per personale medico
   - Integrazione sistemi ospedalieri (HL7 FHIR API)
+  - Notifiche push per personale medico
+  - Export dati per analisi esterne
 
 ### Perché questa Architettura e non un'Altra?
 
@@ -756,11 +744,6 @@ graph TB
         APP[Dashboard<br/>app.py<br/>Flask server]
     end
     
-    subgraph "CLIENTS"
-        WEB[Web Dashboard]
-        MOBILE[Mobile App]
-    end
-    
     PS -->|MQTT Publish<br/>hospital/patient/1<br/>QoS 1| MQTT
     RS -->|MQTT Publish<br/>hospital/room/{id}<br/>QoS 1| MQTT
     AS -->|MQTT Publish<br/>hospital/asset/{id}<br/>QoS 1| MQTT
@@ -777,9 +760,6 @@ graph TB
     
     DB -->|Query Results| API
     DB -->|Query Results| APP
-    
-    API -->|HTTP/REST<br/>JSON responses| WEB
-    APP -->|HTTP/REST<br/>JSON responses| MOBILE
     
     style MQTT fill:#ff9900
     style SUB fill:#00cc66
@@ -1330,9 +1310,8 @@ sequenceDiagram
     participant PROC as Data Processor
     participant DB as Database
     participant API as API Server
-    participant WEB as Web Client
     
-    Note over PS,WEB: Scenario: Temperatura paziente elevata (39.5°C)
+    Note over PS,API: Scenario: Temperatura paziente elevata (39.5°C)
     
     rect rgb(255, 240, 240)
     Note over PS,MQTT: FASE 1: Acquisizione Dati Sensore
@@ -1366,24 +1345,12 @@ sequenceDiagram
     end
     
     rect rgb(240, 240, 255)
-    Note over API,WEB: FASE 3: Visualizzazione Dashboard
-    WEB->>API: GET /api/alerts
+    Note over API,DB: FASE 3: Query API per Alert
+    Note right of API: L'API espone endpoint REST<br/>per query manuali o script
     API->>DB: get_active_alerts(limit=50)
     DB->>DB: SELECT * FROM alerts<br/>WHERE acknowledged=0
     DB->>API: List[Alert objects]
-    API->>WEB: HTTP 200 JSON:<br/>[{"id":1, "type":"HIGH_TEMP",<br/>"severity":"critical", ...}]
-    
-    WEB->>WEB: Display alert on dashboard:<br/>🚨 Patient 123: Temp 39.5°C CRITICAL
-    end
-    
-    rect rgb(255, 255, 240)
-    Note over WEB,DB: FASE 4: Acknowledge Alert
-    WEB->>API: POST /api/alerts/1/acknowledge
-    API->>DB: acknowledge_alert(1)
-    DB->>DB: UPDATE alerts<br/>SET acknowledged=1 WHERE id=1
-    DB->>API: Success
-    API->>WEB: HTTP 200 {"success": true}
-    WEB->>WEB: Remove alert from active list
+    Note right of API: Alert disponibili via:<br/>GET /api/alerts<br/>Risposta JSON con alert attivi
     end
 ```
 

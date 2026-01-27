@@ -23,9 +23,6 @@ backend/              → Elaborazione dati
   └── database.py          (SQLite)
 
 api_server.py         → REST API (Flask)
-data/                 → Database SQLite
-- Python 3.8+
-- MQTT Broker (es. Mosquitto)
 pip install flask paho-mqtt
 # 1. Avvia MQTT broker
 mosquitto
